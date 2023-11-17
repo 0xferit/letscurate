@@ -1,5 +1,7 @@
-import { Outlet } from 'react-router-dom';
 import React from 'react';
+import { Outlet } from 'react-router-dom';
+
+import Header from './components/header';
 
 const Layout = () => {
   return (
@@ -14,6 +16,3 @@ const Layout = () => {
 
 export default Layout;
 
-const Header =()=>{
-    return <div>Header</div>
-}

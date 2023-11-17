@@ -1,1 +1,7 @@
 node_modules
+dist
+
+.parcel-cache
+
+# ignore type-safe generated css classes
+src/**/*.module.scss.d.ts
