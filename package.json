@@ -1,0 +1,29 @@
+{
+  "name": "letscurate",
+  "version": "1.0.0",
+  "description": "Collaborative, permissionless and trustless curation.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/0xferit/letscurate.git"
+  },
+  "keywords": [
+    "curation"
+  ],
+  "author": "Ferit and Stanislav",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/0xferit/letscurate/issues"
+  },
+  "homepage": "https://github.com/0xferit/letscurate#readme",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "hardhat": "^2.19.1"
+  },
+  "volta": {
+    "node": "20.9.0"
+  }
+}

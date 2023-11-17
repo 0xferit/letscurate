@@ -1,0 +1,16 @@
+# Hardhat
+node_modules/
+artifacts/
+coverage/
+cache/
+.history/
+.env
+
+# Visual Studio Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
