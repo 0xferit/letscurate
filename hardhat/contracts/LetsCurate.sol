@@ -12,6 +12,7 @@ contract LetsCurate {
     event NewItem(string indexed itemCID, uint256 indexed curationPolicyCode);
     event NewJuryCandidate(address indexed juryCandidate);
     event ResignJuryCandidate(address indexed juryCandidate);
+    event NewJuryDraw(string indexed itemCID, uint luckyNumber);
 
     constructor() {
         console.log('Deploying a LetsCurate contract');
@@ -48,5 +49,9 @@ contract LetsCurate {
             isJuryCandidate[msg.sender] = false;
             emit ResignJuryCandidate(msg.sender);
         }
+    }
+
+    function drawJury(string calldata itemCID) external {
+        emit NewJuryDraw(itemCID, block.prevrandao);
     }
 }
