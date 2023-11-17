@@ -6,13 +6,26 @@ import 'hardhat/console.sol';
 contract LetsCurate {
     uint256 public curationPolicyCounter;
     uint256 public itemCounter;
+    uint public constant STAKE_SIZE = 0.001 ether;
     mapping(address => bool) isJuryCandidate;
+    mapping(string => ItemState) itemCIDs_itemStates;
 
     event NewCurationPolicy(uint256 indexed curationPolicyCode, string policy);
     event NewItem(string indexed itemCID, uint256 indexed curationPolicyCode);
     event NewJuryCandidate(address indexed juryCandidate);
     event ResignJuryCandidate(address indexed juryCandidate);
     event NewJuryDraw(string indexed itemCID, uint luckyNumber);
+    event NewJuryMember(string indexed itemCID, address indexed juryMember);
+
+    enum ItemState {
+        New,
+        DrawingJury,
+        Curated
+    }
+
+    struct Item {
+        ItemState state;
+    }
 
     constructor() {
         console.log('Deploying a LetsCurate contract');
@@ -51,7 +64,17 @@ contract LetsCurate {
         }
     }
 
-    function drawJury(string calldata itemCID) external {
+    function conductJuryDraw(string calldata itemCID) external {
+        require(itemCIDs_itemStates[itemCID] != ItemState.DrawingJury);
         emit NewJuryDraw(itemCID, block.prevrandao);
+        itemCIDs_itemStates[itemCID] = ItemState.DrawingJury;
+    }
+
+    function announceJuryParticipation(string calldata itemCID) external {
+        require(itemCIDs_itemStates[itemCID] == ItemState.DrawingJury);
+        // Check eligiblity
+        payable(address(this)).transfer(STAKE_SIZE);
+
+        emit NewJuryMember(itemCID, msg.sender);
     }
 }
