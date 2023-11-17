@@ -1,0 +1,46 @@
+$background: #2c2c2c;
+$primary-color: #720da1;
+$secondary-color: #2ecc71;
+
+body, h1, h2, h3, p, ul, li {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Arial', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #333;
+}
+
+a {
+  text-decoration: none;
+  color: $primary-color;
+
+  &:hover {
+    color: darken($primary-color, 10%);
+  }
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.button {
+  display: inline-block;
+  padding: 10px 20px;
+  font-size: 1rem;
+  text-align: center;
+  text-transform: uppercase;
+  cursor: pointer;
+  background-color: $primary-color;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+
+  &:hover {
+    background-color: darken($primary-color, 10%);
+  }
+}

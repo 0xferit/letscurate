@@ -1,0 +1,44 @@
+body, h1, h2, h3, p, ul, li {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  color: #333;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+a {
+  color: #720da1;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #510972;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.button {
+  text-align: center;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: #fff;
+  background-color: #720da1;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  display: inline-block;
+}
+
+.button:hover {
+  background-color: #510972;
+}
+
+/*# sourceMappingURL=index.4a508c1d.css.map */
