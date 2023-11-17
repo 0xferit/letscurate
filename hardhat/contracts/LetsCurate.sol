@@ -19,7 +19,7 @@ contract LetsCurate {
 
     /// @notice Create a new curation policy.
     /// @param curationPolicyCID IPFS content identifier of the curation policy.
-    function createCurationPolicy(string memory curationPolicyCID) public {
+    function createCurationPolicy(string memory curationPolicyCID) external {
         require(curationPolicyCounter + 1 != 0, 'No storage space left for a new curation policy.');
 
         emit NewCurationPolicy(curationPolicyCounter++, curationPolicyCID);
@@ -28,14 +28,14 @@ contract LetsCurate {
     /// @notice Create a new item.
     /// @param itemCID Unique identifier of an item in IPFS content identifier format.
     /// @param curationPolicyCode The curation policy of this new item.
-    function createNewItem(string calldata itemCID, uint8 curationPolicyCode) external payable {
+    function createNewItem(string calldata itemCID, uint8 curationPolicyCode) external {
         require(curationPolicyCode < curationPolicyCounter, 'This curation polic does not exist.');
 
         emit NewItem(itemCID, curationPolicyCode);
     }
 
     /// @notice Become a jury candidate.
-    function becomeJuryCandidate() external payable {
+    function becomeJuryCandidate() external {
         if (!isJuryCandidate[msg.sender]) {
             isJuryCandidate[msg.sender] = true;
             emit NewJuryCandidate(msg.sender);
@@ -43,7 +43,7 @@ contract LetsCurate {
     }
 
     /// @notice Resign as a jury candidate.
-    function resignJuryCandidate() external payable {
+    function resignJuryCandidate() external {
         if (isJuryCandidate[msg.sender]) {
             isJuryCandidate[msg.sender] = false;
             emit ResignJuryCandidate(msg.sender);
