@@ -32,6 +32,8 @@ contract LetsCurate {
         uint lastStateChangeBlockNumber;
         uint lastLuckyNumber;
         address[] lastJuryMembers;
+        uint[] lastVotes;
+        uint curationScore;
     }
 
     constructor() {
@@ -87,7 +89,7 @@ contract LetsCurate {
         uint ticketNumber = uint(keccak256(abi.encodePacked(msg.sender, item.lastLuckyNumber))); // TODO: check for vulnerabilities
         uint tolerance = 1 << (block.number - item.lastStateChangeBlockNumber); // Tolerance starts at 1 and doubles every block
         require(
-            ticketNumber > item.lastLuckyNumber - tolerance || ticketNumber < item.lastLuckyNumber + tolerance,
+            abs(int(ticketNumber) - int(item.lastLuckyNumber)) <= tolerance,
             'This jury candidate is not eligible yet. Try again later.'
         );
 
@@ -107,5 +109,60 @@ contract LetsCurate {
         item.state = ItemState(uint(item.state) + 1);
         item.lastStateChangeBlockNumber = block.number;
         emit StateChange(itemCID, item.state);
+    }
+
+    function castVote(string calldata itemCID, uint position, uint vote) external {
+        require(itemCIDs_itemStructs[itemCID].state == ItemState.AwaitingVotes);
+        require(msg.sender == itemCIDs_itemStructs[itemCID].lastJuryMembers[position]);
+
+        itemCIDs_itemStructs[itemCID].lastVotes[position] = vote;
+
+        if (itemCIDs_itemStructs[itemCID].lastVotes.length == JURY_SIZE) {
+            transitionToNextState(itemCID);
+        }
+    }
+
+    function executeRewardsAndPenalties(string calldata itemCID) internal {
+        Item storage item = itemCIDs_itemStructs[itemCID];
+        uint sum = 0;
+        for (uint i = 0; i < item.lastVotes.length; i++) {
+            sum += item.lastVotes[i];
+        }
+        uint average = sum / item.lastVotes.length;
+        item.curationScore = average;
+
+        uint sumOfSquaredDifferences = 0;
+        for (uint i = 0; i < item.lastVotes.length; i++) {
+            sumOfSquaredDifferences += (item.lastVotes[i] - average) ** 2;
+        }
+        uint standardDeviation = sqrt(sumOfSquaredDifferences / item.lastVotes.length);
+
+        uint numberOfRewardableJuryMembers = 0;
+        for (uint i = 0; i < item.lastVotes.length; i++) {
+            if (abs(int(item.lastVotes[i]) - int(average)) <= standardDeviation) {
+                numberOfRewardableJuryMembers++;
+            }
+        }
+        uint rewardPool = (item.lastJuryMembers.length - numberOfRewardableJuryMembers) * STAKE_SIZE;
+
+        uint reward = rewardPool / numberOfRewardableJuryMembers;
+        for (uint i = 0; i < item.lastVotes.length; i++) {
+            if (abs(int(item.lastVotes[i]) - int(average)) <= standardDeviation) {
+                payable(item.lastJuryMembers[i]).transfer(reward);
+            }
+        }
+    }
+
+    function sqrt(uint x) internal pure returns (uint y) {
+        uint z = (x + 1) / 2;
+        y = x;
+        while (z < y) {
+            y = z;
+            z = (x / z + z) / 2;
+        }
+    }
+
+    function abs(int x) internal pure returns (uint) {
+        return uint(x >= 0 ? x : -x);
     }
 }
