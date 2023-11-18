@@ -8,7 +8,8 @@ contract LetsCurate {
     uint256 public itemCounter;
     uint public constant STAKE_SIZE = 0.001 ether;
     mapping(address => bool) isJuryCandidate;
-    mapping(string => ItemState) itemCIDs_itemStates;
+    // mapping(string => ItemState) itemCIDs_itemStates;
+    mapping(string => Item) itemCIDs_itemStructs;
 
     event NewCurationPolicy(uint256 indexed curationPolicyCode, string policy);
     event NewItem(string indexed itemCID, uint256 indexed curationPolicyCode);
@@ -25,6 +26,7 @@ contract LetsCurate {
 
     struct Item {
         ItemState state;
+        uint lastStateChangeBlockNumber;
     }
 
     constructor() {
@@ -65,14 +67,16 @@ contract LetsCurate {
     }
 
     function conductJuryDraw(string calldata itemCID) external {
-        require(itemCIDs_itemStates[itemCID] != ItemState.DrawingJury);
+        require(itemCIDs_itemStructs[itemCID].state = ItemState.DrawingJury);
+
         emit NewJuryDraw(itemCID, block.prevrandao);
-        itemCIDs_itemStates[itemCID] = ItemState.DrawingJury;
+        itemCIDs_itemStructs[itemCID].state = ItemState.DrawingJury;
     }
 
     function announceJuryParticipation(string calldata itemCID) external {
-        require(itemCIDs_itemStates[itemCID] == ItemState.DrawingJury);
-        // Check eligiblity
+        require(itemCIDs_itemStructs[itemCID].state = ItemState.DrawingJury);
+
+        // uint tolerance = item;
         payable(address(this)).transfer(STAKE_SIZE);
 
         emit NewJuryMember(itemCID, msg.sender);
