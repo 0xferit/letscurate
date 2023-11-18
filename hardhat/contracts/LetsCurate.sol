@@ -71,7 +71,7 @@ contract LetsCurate {
         require(itemCIDs_itemStructs[itemCID].state == ItemState.DrawingJury);
 
         uint ticketNumber = uint(keccak256(abi.encodePacked(msg.sender, item.lastLuckyNumber))); // TODO: check for vulnerabilities
-        uint tolerance = (1 << 100) << (block.number - item.lastStateChangeBlockNumber); // Tolerance starts at 2^100 and doubles every block
+        uint tolerance = (type(uint).max / 128) * (block.number - item.lastStateChangeBlockNumber); // Tolerance starts at max/128 and grows linearly with every block.
         require(
             abs(int(ticketNumber) - int(item.lastLuckyNumber)) <= tolerance,
             'This jury candidate is not eligible yet. Try again later.'
