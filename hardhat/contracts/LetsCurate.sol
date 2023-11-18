@@ -8,9 +8,8 @@ contract LetsCurate {
     uint public constant JURY_SIZE = 3;
 
     uint256 public curationPolicyCounter;
-    uint256 public itemCounter;
-    mapping(address => bool) isJuryCandidate;
-    mapping(string => Item) itemCIDs_itemStructs;
+    mapping(address => bool) public isJuryCandidate;
+    mapping(string => Item) public itemCIDs_itemStructs;
 
     event NewCurationPolicy(uint256 indexed curationPolicyCode, string policy);
     event NewItem(string indexed itemCID, uint256 indexed curationPolicyCode);
@@ -74,7 +73,7 @@ contract LetsCurate {
     }
 
     function conductJuryDraw(string calldata itemCID) external {
-        require(itemCIDs_itemStructs[itemCID].state == ItemState.DrawingJury);
+        require(itemCIDs_itemStructs[itemCID].state == ItemState.New);
 
         emit NewJuryDraw(itemCID, block.prevrandao);
 
