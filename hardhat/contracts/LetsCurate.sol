@@ -65,10 +65,12 @@ contract LetsCurate {
         transitionToNextState(itemCID);
     }
 
-    function announceJuryParticipation(string calldata itemCID) external {
+    function announceJuryParticipation(string calldata itemCID) public payable {
         Item storage item = itemCIDs_itemStructs[itemCID];
 
         require(itemCIDs_itemStructs[itemCID].state == ItemState.DrawingJury);
+        require(msg.value >= STAKE_SIZE, 'You must stake $STAKE_SIZE ether to participate in the jury.');
+        payable(msg.sender).transfer(msg.value - STAKE_SIZE);
 
         uint ticketNumber = uint(keccak256(abi.encodePacked(msg.sender, item.lastLuckyNumber))); // TODO: check for vulnerabilities
         uint tolerance = (type(uint).max / 128) * (block.number - item.lastStateChangeBlockNumber); // Tolerance starts at max/128 and grows linearly with every block.
@@ -77,7 +79,6 @@ contract LetsCurate {
             'This jury candidate is not eligible yet. Try again later.'
         );
 
-        payable(address(this)).transfer(STAKE_SIZE);
         item.lastJuryMembers.push(msg.sender);
 
         if (item.lastJuryMembers.length == JURY_SIZE) {
