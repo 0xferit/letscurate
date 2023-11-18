@@ -8,7 +8,6 @@ contract LetsCurate {
     uint public constant JURY_SIZE = 3;
 
     uint256 public curationPolicyCounter;
-    mapping(address => bool) public isJuryCandidate;
     mapping(string => Item) public itemCIDs_itemStructs;
 
     event NewCurationPolicy(uint256 indexed curationPolicyCode, string policy);
@@ -56,22 +55,6 @@ contract LetsCurate {
         emit NewItem(itemCID, curationPolicyCode);
     }
 
-    /// @notice Become a jury candidate.
-    function becomeJuryCandidate() external {
-        if (!isJuryCandidate[msg.sender]) {
-            isJuryCandidate[msg.sender] = true;
-            emit NewJuryCandidate(msg.sender);
-        }
-    }
-
-    /// @notice Resign as a jury candidate.
-    function resignJuryCandidate() external {
-        if (isJuryCandidate[msg.sender]) {
-            isJuryCandidate[msg.sender] = false;
-            emit ResignJuryCandidate(msg.sender);
-        }
-    }
-
     function conductJuryDraw(string calldata itemCID) external {
         require(itemCIDs_itemStructs[itemCID].state == ItemState.New);
 
@@ -85,6 +68,7 @@ contract LetsCurate {
         Item storage item = itemCIDs_itemStructs[itemCID];
 
         require(itemCIDs_itemStructs[itemCID].state == ItemState.DrawingJury);
+
         uint ticketNumber = uint(keccak256(abi.encodePacked(msg.sender, item.lastLuckyNumber))); // TODO: check for vulnerabilities
         uint tolerance = 1 << (block.number - item.lastStateChangeBlockNumber); // Tolerance starts at 1 and doubles every block
         require(
