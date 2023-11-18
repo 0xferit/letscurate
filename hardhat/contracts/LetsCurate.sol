@@ -4,11 +4,12 @@ pragma solidity ^0.8.9;
 import 'hardhat/console.sol';
 
 contract LetsCurate {
+    uint public constant STAKE_SIZE = 0.001 ether;
+    uint public constant JURY_SIZE = 3;
+
     uint256 public curationPolicyCounter;
     uint256 public itemCounter;
-    uint public constant STAKE_SIZE = 0.001 ether;
     mapping(address => bool) isJuryCandidate;
-    // mapping(string => ItemState) itemCIDs_itemStates;
     mapping(string => Item) itemCIDs_itemStructs;
 
     event NewCurationPolicy(uint256 indexed curationPolicyCode, string policy);
@@ -17,16 +18,20 @@ contract LetsCurate {
     event ResignJuryCandidate(address indexed juryCandidate);
     event NewJuryDraw(string indexed itemCID, uint luckyNumber);
     event NewJuryMember(string indexed itemCID, address indexed juryMember);
+    event StateChange(string indexed itemCID, ItemState newState);
 
     enum ItemState {
         New,
         DrawingJury,
+        AwaitingVotes,
         Curated
     }
 
     struct Item {
         ItemState state;
         uint lastStateChangeBlockNumber;
+        uint lastLuckyNumber;
+        address[] lastJuryMembers;
     }
 
     constructor() {
@@ -67,18 +72,40 @@ contract LetsCurate {
     }
 
     function conductJuryDraw(string calldata itemCID) external {
-        require(itemCIDs_itemStructs[itemCID].state = ItemState.DrawingJury);
+        require(itemCIDs_itemStructs[itemCID].state == ItemState.DrawingJury);
 
         emit NewJuryDraw(itemCID, block.prevrandao);
-        itemCIDs_itemStructs[itemCID].state = ItemState.DrawingJury;
+
+        itemCIDs_itemStructs[itemCID].lastLuckyNumber = block.prevrandao;
+        transitionToNextState(itemCID);
     }
 
     function announceJuryParticipation(string calldata itemCID) external {
-        require(itemCIDs_itemStructs[itemCID].state = ItemState.DrawingJury);
+        Item storage item = itemCIDs_itemStructs[itemCID];
 
-        // uint tolerance = item;
+        require(itemCIDs_itemStructs[itemCID].state == ItemState.DrawingJury);
+        uint ticketNumber = uint(keccak256(abi.encodePacked(msg.sender, item.lastLuckyNumber))); // TODO: check for vulnerabilities
+        uint tolerance = 1 << (block.number - item.lastStateChangeBlockNumber); // Tolerance starts at 1 and doubles every block
+        require(
+            ticketNumber > item.lastLuckyNumber - tolerance || ticketNumber < item.lastLuckyNumber + tolerance,
+            'This jury candidate is not eligible yet. Try again later.'
+        );
+
         payable(address(this)).transfer(STAKE_SIZE);
+        item.lastJuryMembers.push(msg.sender);
+
+        if (item.lastJuryMembers.length == JURY_SIZE) {
+            transitionToNextState(itemCID);
+        }
 
         emit NewJuryMember(itemCID, msg.sender);
+    }
+
+    function transitionToNextState(string calldata itemCID) internal {
+        Item storage item = itemCIDs_itemStructs[itemCID];
+
+        item.state = ItemState(uint(item.state) + 1);
+        item.lastStateChangeBlockNumber = block.number;
+        emit StateChange(itemCID, item.state);
     }
 }
