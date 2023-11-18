@@ -6,13 +6,13 @@ import 'hardhat/console.sol';
 contract LetsCurate {
     uint public constant STAKE_SIZE = 0.001 ether;
     uint public constant JURY_SIZE = 3;
+    uint public constant VOTING_PERIOD = 30;
 
     uint256 public curationPolicyCounter;
     mapping(string => Item) public itemCIDs_itemStructs;
 
     event NewCurationPolicy(uint256 indexed curationPolicyCode, string policy);
     event NewItem(string indexed itemCID, uint256 indexed curationPolicyCode);
-    event NewJuryCandidate(address indexed juryCandidate);
     event ResignJuryCandidate(address indexed juryCandidate);
     event NewJuryDraw(string indexed itemCID, uint luckyNumber);
     event NewJuryMember(string indexed itemCID, address indexed juryMember);
@@ -32,6 +32,7 @@ contract LetsCurate {
         address[] lastJuryMembers;
         uint[] lastVotes;
         uint curationScore;
+        uint numberOfCurationRounds;
     }
 
     constructor() {
@@ -50,7 +51,7 @@ contract LetsCurate {
     /// @param itemCID Unique identifier of an item in IPFS content identifier format.
     /// @param curationPolicyCode The curation policy of this new item.
     function createNewItem(string calldata itemCID, uint8 curationPolicyCode) external {
-        require(curationPolicyCode < curationPolicyCounter, 'This curation polic does not exist.');
+        require(curationPolicyCode < curationPolicyCounter, 'This curation policy does not exist.');
 
         emit NewItem(itemCID, curationPolicyCode);
     }
@@ -70,7 +71,7 @@ contract LetsCurate {
         require(itemCIDs_itemStructs[itemCID].state == ItemState.DrawingJury);
 
         uint ticketNumber = uint(keccak256(abi.encodePacked(msg.sender, item.lastLuckyNumber))); // TODO: check for vulnerabilities
-        uint tolerance = 1 << (block.number - item.lastStateChangeBlockNumber); // Tolerance starts at 1 and doubles every block
+        uint tolerance = (1 << 100) << (block.number - item.lastStateChangeBlockNumber); // Tolerance starts at 2^100 and doubles every block
         require(
             abs(int(ticketNumber) - int(item.lastLuckyNumber)) <= tolerance,
             'This jury candidate is not eligible yet. Try again later.'
@@ -81,6 +82,7 @@ contract LetsCurate {
 
         if (item.lastJuryMembers.length == JURY_SIZE) {
             transitionToNextState(itemCID);
+            item.numberOfCurationRounds++;
         }
 
         emit NewJuryMember(itemCID, msg.sender);
@@ -94,15 +96,35 @@ contract LetsCurate {
         emit StateChange(itemCID, item.state);
     }
 
+    function endVotingPeriod(string calldata itemCID) public {
+        Item storage item = itemCIDs_itemStructs[itemCID];
+
+        require(item.state == ItemState.AwaitingVotes);
+        bool isAllVotesCast = true;
+        // if all votes have been cast, then the voting period is over
+        for (uint i = 0; i < JURY_SIZE; i++) {
+            if (item.lastVotes[i] == 0) {
+                isAllVotesCast = false;
+                break;
+            }
+        }
+        require(
+            block.number - itemCIDs_itemStructs[itemCID].lastStateChangeBlockNumber >= VOTING_PERIOD || isAllVotesCast
+        );
+
+        transitionToNextState(itemCID);
+        executeRewardsAndPenalties(itemCID);
+    }
+
     function castVote(string calldata itemCID, uint position, uint vote) external {
-        require(itemCIDs_itemStructs[itemCID].state == ItemState.AwaitingVotes);
-        require(msg.sender == itemCIDs_itemStructs[itemCID].lastJuryMembers[position]);
+        require(itemCIDs_itemStructs[itemCID].state == ItemState.AwaitingVotes, 'Not awaiting votes.');
+        require(msg.sender == itemCIDs_itemStructs[itemCID].lastJuryMembers[position], 'You are not a jury member.');
+        require(
+            VOTING_PERIOD > block.number - itemCIDs_itemStructs[itemCID].lastStateChangeBlockNumber,
+            'Voting period has ended.'
+        );
 
         itemCIDs_itemStructs[itemCID].lastVotes[position] = vote;
-
-        if (itemCIDs_itemStructs[itemCID].lastVotes.length == JURY_SIZE) {
-            transitionToNextState(itemCID);
-        }
     }
 
     function executeRewardsAndPenalties(string calldata itemCID) internal {
